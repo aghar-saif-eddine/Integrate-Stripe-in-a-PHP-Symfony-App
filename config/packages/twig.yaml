@@ -1,0 +1,5 @@
+twig:
+    file_name_pattern: '*.twig'
+    globals:
+        stripe_publishable_key: '%env(STRIPE_PUBLISHABLE_KEY)%'
+

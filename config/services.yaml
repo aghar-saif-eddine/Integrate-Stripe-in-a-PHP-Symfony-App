@@ -1,0 +1,19 @@
+parameters:
+    stripe.publishable_key: '%env(STRIPE_PUBLISHABLE_KEY)%'
+    stripe.secret_key: '%env(STRIPE_SECRET_KEY)%'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    App\Service\PaymentService:
+        arguments:
+            $secretKey: '%stripe.secret_key%'

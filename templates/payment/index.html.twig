@@ -1,0 +1,128 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Stripe Payment Integration</title>
+        <!-- Include Stripe.js -->
+        <script src="https://js.stripe.com/v3/"></script>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background-color: #f4f4f9;
+            }
+            .payment-container {
+                background: #ffffff;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                width: 100%;
+                max-width: 400px;
+            }
+            h1 {
+                text-align: center;
+                margin-bottom: 20px;
+                color: #333;
+            }
+            #card-element {
+                margin-bottom: 20px;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+            }
+            button {
+                width: 100%;
+                padding: 10px;
+                background-color: #6772e5;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                font-size: 16px;
+                cursor: pointer;
+            }
+            button:hover {
+                background-color: #5469d4;
+            }
+            #error-message {
+                color: red;
+                margin-top: 10px;
+                font-size: 14px;
+            }
+        </style>
+    </head>
+    <body>
+    <div class="payment-container">
+        <h1>Secure Payment</h1>
+        <form id="payment-form">
+            <div id="card-element">
+                <!-- A Stripe Element will be inserted here. -->
+            </div>
+            <button id="submit">Pay $10.00</button>
+            <div id="error-message"></div>
+        </form>
+    </div>
+
+    <script>
+        // Initialize Stripe.js with your publishable key
+        const stripe = Stripe('{{ stripe_publishable_key }}'); // Injected from the controller
+        const elements = stripe.elements();
+        const cardElement = elements.create('card');
+        cardElement.mount('#card-element');
+
+        // Handle form submission
+        const form = document.getElementById('payment-form');
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            // Disable the submit button to prevent multiple submissions
+            const submitButton = document.getElementById('submit');
+            submitButton.disabled = true;
+
+            // Create a Stripe token from the card element
+            const { token, error } = await stripe.createToken(cardElement);
+
+            if (error) {
+                // Display error message to the user
+                const errorMessage = document.getElementById('error-message');
+                errorMessage.textContent = error.message;
+
+                // Re-enable the submit button
+                submitButton.disabled = false;
+            } else {
+                // Send the token to your server for processing
+                fetch('/payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: 1000, // Amount in cents ($10.00)
+                        currency: 'usd',
+                        token: token.id,
+                    }),
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            alert('Payment successful!');
+                        } else {
+                            alert('Payment failed: ' + data.message);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error:', err);
+                        alert('An unexpected error occurred.');
+                    })
+                    .finally(() => {
+                        // Re-enable the submit button
+                        submitButton.disabled = false;
+                    });
+            }
+        });
+    </script>
+    </body>
+    </html>
